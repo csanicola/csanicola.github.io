@@ -1,0 +1,14 @@
+github_users:
+  - csanicola
+  - csanicola74
+
+repo_description_lines_max: 2
+
+github_repos:
+  - csanicola/csanicola.github.io
+  - csanicola/important-reference-repo
+  - twbs/bootstrap
+  - jquery/jquery
+  - FortAwesome/Font-Awesome
+  - mathjax/MathJax
+  - jpswalsh/academicons
