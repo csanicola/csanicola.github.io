@@ -3,6 +3,7 @@ require 'httparty'
 require 'jekyll'
 require 'nokogiri'
 require 'time'
+require 'fileutils'
 
 module ExternalPosts
   class ExternalPostsGenerator < Jekyll::Generator
@@ -59,7 +60,11 @@ module ExternalPosts
         slug = "#{source_name.downcase.strip.gsub(' ', '-').gsub(/[^\w-]/, '')}-#{url.split('/').last}" if slug.empty?
       end
 
-      path = site.in_source_dir("_posts/#{slug}.md")
+      # Ensure the _posts directory exists
+      posts_dir = site.in_source_dir("_posts")
+      FileUtils.mkdir_p(posts_dir) unless File.directory?(posts_dir)
+
+      path = File.join(posts_dir, "#{slug}.md")
       doc = Jekyll::Document.new(
         path, { :site => site, :collection => site.collections['posts'] }
       )
