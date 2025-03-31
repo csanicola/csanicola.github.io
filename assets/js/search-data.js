@@ -37,6 +37,13 @@ ninja.data = [{
           handler: () => {
             window.location.href = "/repositories/";
           },
+        },{id: "nav-resources",
+          title: "resources",
+          description: "",
+          section: "Navigation",
+          handler: () => {
+            window.location.href = "/resource-portal/";
+          },
         },{id: "nav-cv",
           title: "cv",
           description: "",
@@ -399,23 +406,25 @@ ninja.data = [{
             window.location.href = "/blog/2015/formatting-and-links/";
           
         },
-      },{id: "books-the-godfather",
-          title: 'The Godfather',
+      },{id: "books-into-the-wild",
+          title: 'Into the Wild',
           description: "",
           section: "Books",handler: () => {
-              window.location.href = "/books/the_godfather/";
-            },},{id: "news-a-simple-inline-announcement",
-          title: 'A simple inline announcement.',
+              window.location.href = "/books/into_the_wild/";
+            },},{id: "books-second-foundation",
+          title: 'Second Foundation',
           description: "",
-          section: "News",},{id: "news-a-long-announcement-with-details",
-          title: 'A long announcement with details',
+          section: "Books",handler: () => {
+              window.location.href = "/books/second_foundation/";
+            },},{id: "news-this-website-is-now-live-i-m-still-working-on-it-and-will-be-adding-more-content-as-i-go-along",
+          title: 'This website is now live! I’m still working on it and will be...',
+          description: "",
+          section: "News",},{id: "news-the-resource-portal-is-coming-soon",
+          title: 'The Resource Portal is coming soon!',
           description: "",
           section: "News",handler: () => {
               window.location.href = "/news/announcement_2/";
-            },},{id: "news-a-simple-inline-announcement-with-markdown-emoji-sparkles-smile",
-          title: 'A simple inline announcement with Markdown emoji! :sparkles: :smile:',
-          description: "",
-          section: "News",},{id: "projects-project-1",
+            },},{id: "projects-project-1",
           title: 'project 1',
           description: "with background image",
           section: "Projects",handler: () => {
