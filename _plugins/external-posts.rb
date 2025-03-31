@@ -10,19 +10,22 @@ module ExternalPosts
     priority :high
 
     def generate(site)
-      if site.config['external_sources'] != nil
-        site.config['external_sources'].each do |src|
-          puts "Fetching external posts from #{src['name']}:"
-          if src['rss_url']
-            fetch_from_rss(site, src)
-          elsif src['posts']
-            fetch_from_urls(site, src)
-          end
+      # Skip if external_sources is nil or empty
+      return if site.config['external_sources'].nil? || site.config['external_sources'].empty?
+      
+      site.config['external_sources'].each do |src|
+        next if src.nil? || src['name'].nil?
+        puts "Fetching external posts from #{src['name']}:"
+        if src['rss_url']
+          fetch_from_rss(site, src)
+        elsif src['posts']
+          fetch_from_urls(site, src)
         end
       end
     end
 
     def fetch_from_rss(site, src)
+      return if src['rss_url'].nil?
       xml = HTTParty.get(src['rss_url']).body
       return if xml.nil?
       feed = Feedjira.parse(xml)
@@ -30,7 +33,9 @@ module ExternalPosts
     end
 
     def process_entries(site, src, entries)
+      return if entries.nil?
       entries.each do |e|
+        next if e.nil? || e.url.nil?
         puts "...fetching #{e.url}"
         create_document(site, src['name'], e.url, {
           title: e.title,
@@ -42,6 +47,8 @@ module ExternalPosts
     end
 
     def create_document(site, source_name, url, content)
+      return if source_name.nil? || url.nil? || content.nil?
+      
       # check if title is composed only of whitespace or foreign characters
       if content[:title].gsub(/[^\w]/, '').strip.empty?
         # use the source name and last url segment as fallback
@@ -67,7 +74,9 @@ module ExternalPosts
     end
 
     def fetch_from_urls(site, src)
+      return if src['posts'].nil?
       src['posts'].each do |post|
+        next if post.nil? || post['url'].nil?
         puts "...fetching #{post['url']}"
         content = fetch_content_from_url(post['url'])
         content[:published] = parse_published_date(post['published_date'])
@@ -76,6 +85,7 @@ module ExternalPosts
     end
 
     def parse_published_date(published_date)
+      return Time.now.utc if published_date.nil?
       case published_date
       when String
         Time.parse(published_date).utc
@@ -87,7 +97,9 @@ module ExternalPosts
     end
 
     def fetch_content_from_url(url)
+      return { title: '', content: '', summary: '' } if url.nil?
       html = HTTParty.get(url).body
+      return { title: '', content: '', summary: '' } if html.nil?
       parsed_html = Nokogiri::HTML(html)
 
       title = parsed_html.at('head title')&.text.strip || ''
@@ -102,9 +114,7 @@ module ExternalPosts
         title: title,
         content: body_content,
         summary: description
-        # Note: The published date is now added in the fetch_from_urls method.
       }
     end
-
   end
 end
