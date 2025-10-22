@@ -1,195 +1,11 @@
 #!/bin/bash
 set -e
 
-echo "Building comprehensive dashboard..."
+echo "Building client-side dashboard..."
 
-# Create a Python script with improved error handling and fallbacks
-cat > scripts/rss_dashboard.py << 'EOF'
-import feedparser
-import requests
-import json
-from datetime import datetime
-import time
-
-def fetch_rss_feed(url, max_items=5):
-    try:
-        feed = feedparser.parse(url)
-        items = []
-        for entry in feed.entries[:max_items]:
-            items.append({
-                'title': entry.title,
-                'link': entry.link,
-                'published': entry.get('published', 'No date')
-            })
-        return items
-    except Exception as e:
-        return [{'title': f'Error fetching feed: {e}', 'link': '#', 'published': 'Error'}]
-
-def fetch_f1_data():
-    try:
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-        results = []
-        current_year = datetime.now().year
-
-        # Try multiple F1 API endpoints
-        api_endpoints = [
-            f"http://ergast.com/api/f1/{current_year}/next.json",
-            f"https://ergast.com/api/f1/{current_year}/next.json",
-            f"http://ergast.com/api/f1/{current_year}/last/results.json",
-            f"https://ergast.com/api/f1/{current_year}/last/results.json"
-        ]
-
-        # Next Race - try multiple approaches
-        next_race_found = False
-        for endpoint in api_endpoints[:2]:
-            try:
-                response = requests.get(endpoint, headers=headers, timeout=15)
-                if response.status_code == 200:
-                    data = response.json()
-                    races = data['MRData']['RaceTable']['Races']
-                    if races:
-                        race = races[0]
-                        race_name = race['raceName']
-                        race_date = race['date']
-                        circuit = race['Circuit']['circuitName']
-                        location = race['Circuit']['Location']['country']
-                        results.append(f"<div class='data-item'><strong>Next F1 Race:</strong> {race_name} in {location} on {race_date}</div>")
-                        next_race_found = True
-                        break
-            except:
-                continue
-
-        if not next_race_found:
-            # Fallback: Use current F1 season schedule knowledge
-            f1_races_2024 = [
-                {"name": "Bahrain GP", "date": "2024-03-02", "location": "Bahrain"},
-                {"name": "Saudi Arabian GP", "date": "2024-03-09", "location": "Saudi Arabia"},
-                {"name": "Australian GP", "date": "2024-03-24", "location": "Australia"}
-            ]
-            today = datetime.now().strftime("%Y-%m-%d")
-            next_race = None
-            for race in f1_races_2024:
-                if race["date"] >= today:
-                    next_race = race
-                    break
-            if next_race:
-                results.append(f"<div class='data-item'><strong>Next F1 Race:</strong> {next_race['name']} in {next_race['location']} on {next_race['date']}</div>")
-            else:
-                results.append("<div class='data-item'><strong>Next F1 Race:</strong> 2024 season starting soon</div>")
-
-        # Last Race Results
-        last_race_found = False
-        for endpoint in api_endpoints[2:]:
-            try:
-                response = requests.get(endpoint, headers=headers, timeout=15)
-                if response.status_code == 200:
-                    data = response.json()
-                    races = data['MRData']['RaceTable']['Races']
-                    if races:
-                        race = races[0]
-                        winner = race['Results'][0]['Driver']
-                        winner_name = f"{winner['givenName']} {winner['familyName']}"
-                        team = race['Results'][0]['Constructor']['name']
-                        results.append(f"<div class='data-item'><strong>Last F1 Race:</strong> {winner_name} ({team}) won {race['raceName']}</div>")
-                        last_race_found = True
-                        break
-            except:
-                continue
-
-        if not last_race_found:
-            results.append("<div class='data-item'><strong>Last F1 Race:</strong> Max Verstappen (Red Bull) - 2023 Champion</div>")
-
-        # Standings - use known 2023 results as fallback
-        results.append("<div class='data-item'><strong>F1 Drivers Standings:</strong> Max Verstappen leads (2023 Champion)</div>")
-        results.append("<div class='data-item'><strong>F1 Constructors:</strong> Red Bull leads (2023 Champions)</div>")
-
-        return "".join(results)
-
-    except Exception as e:
-        # Ultimate fallback
-        return """
-        <div class='data-item'><strong>Next F1 Race:</strong> Bahrain GP - March 2, 2024</div>
-        <div class='data-item'><strong>Last F1 Race:</strong> Abu Dhabi 2023 - Max Verstappen won</div>
-        <div class='data-item'><strong>F1 Drivers Standings:</strong> 2024 season starting soon</div>
-        <div class='data-item'><strong>F1 Constructors:</strong> 2024 season starting soon</div>
-        """
-
-def fetch_sports_data():
-    try:
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-        results = []
-
-        # Manchester United - Use multiple approaches
-        try:
-            # Approach 1: Try football-data.org without auth (limited access)
-            response = requests.get("https://api.football-data.org/v4/competitions/PL/matches?status=SCHEDULED",
-                                  headers=headers, timeout=10)
-
-            if response.status_code == 200:
-                data = response.json()
-                man_utd_match = None
-                for match in data.get('matches', []):
-                    home_team = match.get('homeTeam', {}).get('name', '')
-                    away_team = match.get('awayTeam', {}).get('name', '')
-                    if 'Manchester United' in home_team or 'Manchester United' in away_team:
-                        man_utd_match = match
-                        break
-
-                if man_utd_match:
-                    home_team = man_utd_match['homeTeam']['name']
-                    away_team = man_utd_match['awayTeam']['name']
-                    date = man_utd_match['utcDate'][:10]
-                    results.append(f"<div class='data-item'><strong>Man United:</strong> {home_team} vs {away_team} on {date}</div>")
-                else:
-                    # Fallback to known schedule
-                    results.append("<div class='data-item'><strong>Man United:</strong> Check Premier League schedule</div>")
-            else:
-                # Approach 2: Use a sports API that doesn't require auth
-                results.append("<div class='data-item'><strong>Man United:</strong> Following Premier League 2023/24</div>")
-        except:
-            results.append("<div class='data-item'><strong>Man United:</strong> Red Devils - Premier League</div>")
-
-        # NHL Data with better error handling
-        try:
-            response = requests.get("https://api-web.nhle.com/v1/score/now", headers=headers, timeout=10)
-            if response.status_code == 200:
-                data = response.json()
-                games_today = []
-
-                for game in data.get('games', []):
-                    game_state = game.get('gameState')
-                    if game_state in ['LIVE', 'FUTURE']:
-                        home_team = game.get('homeTeam', {}).get('name', {}).get('default', 'Home')
-                        away_team = game.get('awayTeam', {}).get('name', {}).get('default', 'Away')
-
-                        if game_state == 'LIVE':
-                            home_score = game.get('homeTeam', {}).get('score', 0)
-                            away_score = game.get('awayTeam', {}).get('score', 0)
-                            games_today.append(f"{away_team} {away_score}-{home_score} {home_team}")
-                        else:
-                            games_today.append(f"{away_team} vs {home_team}")
-
-                if games_today:
-                    # Show max 2 games to avoid clutter
-                    display_games = games_today[:2]
-                    results.append(f"<div class='data-item'><strong>NHL Today:</strong> {', '.join(display_games)}</div>")
-                else:
-                    results.append("<div class='data-item'><strong>NHL Today:</strong> No games scheduled today</div>")
-            else:
-                results.append("<div class='data-item'><strong>NHL Today:</strong> Regular season ongoing</div>")
-        except:
-            results.append("<div class='data-item'><strong>NHL Today:</strong> NHL 2023-24 season</div>")
-
-        return "".join(results)
-
-    except Exception as e:
-        return """
-        <div class='data-item'><strong>Man United:</strong> Premier League 2023/24 Season</div>
-        <div class='data-item'><strong>NHL Today:</strong> NHL 2023-24 Season</div>
-        """
-
-# Generate the dashboard content
-print('''---
+# Create a static dashboard that uses JavaScript to fetch data
+cat > _pages/dashboard.md << 'EOF'
+---
 layout: page
 title: Dashboard
 permalink: /dashboard/
@@ -198,140 +14,209 @@ nav: true
 
 <div class="dashboard-container">
   <h1>📊 Personal Dashboard</h1>
-  <p><strong>Last updated:</strong>''', datetime.now().strftime("%Y-%m-%d %H:%M"), '''</p>
+  <p><strong>Last updated:</strong> <span id="current-date"></span></p>
 
   <div class="dashboard-grid">
-''')
+    <!-- News & Tech Section -->
+    <div class="dashboard-section">
+      <h2>📰 News & Tech</h2>
+      <div id="news-feeds">
+        <div class="loading">Loading news feeds...</div>
+      </div>
+    </div>
 
-# News Feeds Section
-print('''    <div class="dashboard-section">
-      <h2>📰 News & Tech</h2>''')
-
-news_feeds = [
-    ('https://feeds.bbci.co.uk/news/uk/rss.xml', 'BBC News'),
-    ('https://www.theverge.com/rss/index.xml', 'The Verge'),
-    ('https://www.gamespot.com/feeds/mashup', 'GameSpot'),
-    ('https://www.wired.com/feed/rss', 'WIRED'),
-    ('https://techcrunch.com/feed/', 'TechCrunch'),
-    ('https://www.koreaboo.com/feed/', 'Koreaboo'),
-    ('https://rss.app/feeds/uTAh28NvFk2AaOES.xml', 'AllKpop'),
-    ('https://feed.cnet.com/feed/news', 'CNET')
-]
-
-for url, title in news_feeds:
-    print(f'<div class="feed-widget">')
-    print(f'<h3>📖 {title}</h3>')
-    items = fetch_rss_feed(url, 3)
-    for item in items:
-        print(f'<div class="feed-item">')
-        print(f'<a href="{item["link"]}" target="_blank" rel="noopener">{item["title"]}</a>')
-        print(f'<br><small>{item["published"]}</small>')
-        print(f'</div>')
-    print(f'</div>')
-    time.sleep(0.5)
-
-print('''    </div>''')
-
-# Sports & F1 Section (Combined)
-print('''    <div class="dashboard-section">
+    <!-- Sports & F1 Section -->
+    <div class="dashboard-section">
       <h2>🏆 Sports & Formula 1</h2>
-      <div class="sports-info">
-''')
-
-# Fetch F1 Data
-print(fetch_f1_data())
-
-# Fetch Sports Data
-print(fetch_sports_data())
-
-print('''      </div>
+      <div id="sports-data">
+        <div class="loading">Loading sports data...</div>
+      </div>
       <div class="sports-links">
         <a href="https://www.formula1.com/" target="_blank" rel="noopener">🏎️ F1 Official</a>
         <a href="https://www.manutd.com/" target="_blank" rel="noopener">⚽ Man United</a>
         <a href="https://www.nhl.com/" target="_blank" rel="noopener">🏒 NHL Official</a>
       </div>
-    </div>''')
+    </div>
 
-# Twitch Channels Section
-print('''    <div class="dashboard-section">
+    <!-- Twitch Channels -->
+    <div class="dashboard-section">
       <h2>🎮 Twitch Channels</h2>
-      <div class="channel-grid">''')
+      <div class="channel-grid">
+        <a href="https://twitch.tv/trackingthepros" target="_blank" rel="noopener" class="channel-item">📺 TrackingThePros</a>
+        <a href="https://twitch.tv/amazonian" target="_blank" rel="noopener" class="channel-item">📺 Amazonian</a>
+        <a href="https://twitch.tv/jakenbakelive" target="_blank" rel="noopener" class="channel-item">📺 JakenbakeLive</a>
+        <a href="https://twitch.tv/lck" target="_blank" rel="noopener" class="channel-item">📺 LCK</a>
+        <a href="https://twitch.tv/lpl" target="_blank" rel="noopener" class="channel-item">📺 LPL</a>
+        <a href="https://twitch.tv/lec" target="_blank" rel="noopener" class="channel-item">📺 LEC</a>
+        <a href="https://twitch.tv/eeowna" target="_blank" rel="noopener" class="channel-item">📺 Eeowna</a>
+        <a href="https://twitch.tv/EJ_SA" target="_blank" rel="noopener" class="channel-item">📺 EJ_SA</a>
+        <a href="https://twitch.tv/vanillamace" target="_blank" rel="noopener" class="channel-item">📺 VanillaMace</a>
+        <a href="https://twitch.tv/UniandOMU" target="_blank" rel="noopener" class="channel-item">📺 UniandOMU</a>
+      </div>
+    </div>
 
-twitch_channels = [
-    ('trackingthepros', 'TrackingThePros'),
-    ('amazonian', 'Amazonian'),
-    ('jakenbakelive', 'JakenbakeLive'),
-    ('lck', 'LCK'),
-    ('lpl', 'LPL'),
-    ('lec', 'LEC'),
-    ('eeowna', 'Eeowna'),
-    ('EJ_SA', 'EJ_SA'),
-    ('vanillamace', 'VanillaMace'),
-    ('UniandOMU', 'UniandOMU')
-]
-
-for channel_id, channel_name in twitch_channels:
-    print(f'<a href="https://twitch.tv/{channel_id}" target="_blank" rel="noopener" class="channel-item">📺 {channel_name}</a>')
-
-print('''      </div>
-    </div>''')
-
-# YouTube Channels Section
-print('''    <div class="dashboard-section">
+    <!-- YouTube Channels -->
+    <div class="dashboard-section">
       <h2>📺 YouTube Channels</h2>
-      <div class="channel-grid">''')
+      <div class="channel-grid">
+        <a href="https://youtube.com/channel/UCXuqSBlHAE6Xw-yeJA0Tunw" target="_blank" rel="noopener" class="channel-item">🎬 Linus Tech Tips</a>
+        <a href="https://youtube.com/channel/UCpqXJOEqGS-TCnazcHCo0rA" target="_blank" rel="noopener" class="channel-item">🎬 theRadBrad</a>
+        <a href="https://youtube.com/channel/UCo9ZZ04kIhN_8xGxvnjaduQ" target="_blank" rel="noopener" class="channel-item">🎬 Stephanie Soo</a>
+        <a href="https://youtube.com/channel/UC0JJtK3m8pwy6rVgnBz47Rw" target="_blank" rel="noopener" class="channel-item">🎬 Rotten Mango</a>
+        <a href="https://youtube.com/channel/UCabq3No3wXbs6Ut-Pux6SzA" target="_blank" rel="noopener" class="channel-item">🎬 The TRY Channel</a>
+        <a href="https://youtube.com/channel/UCZ0p2Bqvtgy7XnEvis4l2FQ" target="_blank" rel="noopener" class="channel-item">🎬 The Unsolicited Truth</a>
+        <a href="https://youtube.com/channel/UC2sgoh6YCrf8df1UMpUciTw" target="_blank" rel="noopener" class="channel-item">🎬 Trixie & Katya</a>
+        <a href="https://youtube.com/channel/UCfpaSruWW3S4dibonKXENjA" target="_blank" rel="noopener" class="channel-item">🎬 Tzuyang</a>
+        <a href="https://youtube.com/channel/UC2B5onlYkZ7IaVekR9yIB6w" target="_blank" rel="noopener" class="channel-item">🎬 Gongsam Table</a>
+        <a href="https://youtube.com/channel/UCT5C7yaO3RVuOgwP8JVAujQ" target="_blank" rel="noopener" class="channel-item">🎬 Taskmaster</a>
+        <a href="https://youtube.com/channel/UCAL3JXZSzSm8AlZyD3nQdBA" target="_blank" rel="noopener" class="channel-item">🎬 Primitive Technology</a>
+        <a href="https://youtube.com/channel/UCBs2Y3i14e1NWQxOGliatmg" target="_blank" rel="noopener" class="channel-item">🎬 Mother's Basement</a>
+        <a href="https://youtube.com/channel/UC7dF9qfBMXrSlaaFFDvV_Yg" target="_blank" rel="noopener" class="channel-item">🎬 Gigguk</a>
+        <a href="https://youtube.com/channel/UC1Dp1VItMV-YbB9Nj7qaXjg" target="_blank" rel="noopener" class="channel-item">🎬 Nickcompoops</a>
+        <a href="https://youtube.com/channel/UCk9GmdlDTBfgGRb7vXeRMoQ" target="_blank" rel="noopener" class="channel-item">🎬 Red Velvet</a>
+        <a href="https://youtube.com/channel/UCxkWBN3nHuo0sCz0GBVWWaQ" target="_blank" rel="noopener" class="channel-item">🎬 Chaeyeon</a>
+        <a href="https://youtube.com/channel/UCJnL-TBcsYrF2SLs7tmiC8Q" target="_blank" rel="noopener" class="channel-item">🎬 tripleS</a>
+        <a href="https://youtube.com/channel/UCyPwRgc3gQGqhk6RoGS50Ug" target="_blank" rel="noopener" class="channel-item">🎬 SHINee</a>
+        <a href="https://youtube.com/channel/UC3SyT4_WLHzN7JmHQwKQZww" target="_blank" rel="noopener" class="channel-item">🎬 IU</a>
+        <a href="https://youtube.com/channel/UCeXaojJKJ9DVFkVM6O6drBQ" target="_blank" rel="noopener" class="channel-item">🎬 Minho</a>
+        <a href="https://youtube.com/channel/UCuhAUMLzJxlP1W7mEk0_6lA" target="_blank" rel="noopener" class="channel-item">🎬 Mamamoo</a>
+        <a href="https://youtube.com/channel/UCiM8arBZ-GyuBFG3wy6fEgw" target="_blank" rel="noopener" class="channel-item">🎬 Hwasa</a>
+        <a href="https://youtube.com/channel/UCzgxx_DM2Dcb9Y1spb9mUJA" target="_blank" rel="noopener" class="channel-item">🎬 Twice</a>
+      </div>
+    </div>
 
-youtube_channels = [
-    ('UCXuqSBlHAE6Xw-yeJA0Tunw', 'Linus Tech Tips'),
-    ('UCpqXJOEqGS-TCnazcHCo0rA', 'theRadBrad'),
-    ('UCo9ZZ04kIhN_8xGxvnjaduQ', 'Stephanie Soo'),
-    ('UC0JJtK3m8pwy6rVgnBz47Rw', 'Rotten Mango'),
-    ('UCabq3No3wXbs6Ut-Pux6SzA', 'The TRY Channel'),
-    ('UCZ0p2Bqvtgy7XnEvis4l2FQ', 'The Unsolicited Truth'),
-    ('UC2sgoh6YCrf8df1UMpUciTw', 'Trixie & Katya'),
-    ('UCfpaSruWW3S4dibonKXENjA', 'Tzuyang'),
-    ('UC2B5onlYkZ7IaVekR9yIB6w', 'Gongsam Table'),
-    ('UCT5C7yaO3RVuOgwP8JVAujQ', 'Taskmaster'),
-    ('UCAL3JXZSzSm8AlZyD3nQdBA', 'Primitive Technology'),
-    ('UCBs2Y3i14e1NWQxOGliatmg', 'Mother\'s Basement'),
-    ('UC7dF9qfBMXrSlaaFFDvV_Yg', 'Gigguk'),
-    ('UC1Dp1VItMV-YbB9Nj7qaXjg', 'Nickcompoops'),
-    ('UCk9GmdlDTBfgGRb7vXeRMoQ', 'Red Velvet'),
-    ('UCxkWBN3nHuo0sCz0GBVWWaQ', 'Chaeyeon'),
-    ('UCJnL-TBcsYrF2SLs7tmiC8Q', 'tripleS'),
-    ('UCyPwRgc3gQGqhk6RoGS50Ug', 'SHINee'),
-    ('UC3SyT4_WLHzN7JmHQwKQZww', 'IU'),
-    ('UCeXaojJKJ9DVFkVM6O6drBQ', 'Minho'),
-    ('UCuhAUMLzJxlP1W7mEk0_6lA', 'Mamamoo'),
-    ('UCiM8arBZ-GyuBFG3wy6fEgw', 'Hwasa'),
-    ('UCzgxx_DM2Dcb9Y1spb9mUJA', 'Twice')
-]
-
-for channel_id, channel_name in youtube_channels:
-    print(f'<a href="https://youtube.com/channel/{channel_id}" target="_blank" rel="noopener" class="channel-item">🎬 {channel_name}</a>')
-
-print('''      </div>
-    </div>''')
-
-# Reddit Section
-print('''    <div class="dashboard-section">
+    <!-- Reddit Communities -->
+    <div class="dashboard-section">
       <h2>💬 Reddit Communities</h2>
-      <div class="channel-grid">''')
-
-reddit_feeds = [
-    'technology', 'ObsidianMD', 'analytics', 'AskReddit', 'kpop',
-    'ManchesterUnited', 'ThaiGL', 'GirlsLove'
-]
-
-for feed in reddit_feeds:
-    print(f'<a href="https://reddit.com/r/{feed}" target="_blank" rel="noopener" class="channel-item">🔗 r/{feed}</a>')
-
-print('''      </div>
-    </div>''')
-
-# Close the HTML
-print('''  </div>
+      <div class="channel-grid">
+        <a href="https://reddit.com/r/technology" target="_blank" rel="noopener" class="channel-item">🔗 r/technology</a>
+        <a href="https://reddit.com/r/ObsidianMD" target="_blank" rel="noopener" class="channel-item">🔗 r/ObsidianMD</a>
+        <a href="https://reddit.com/r/analytics" target="_blank" rel="noopener" class="channel-item">🔗 r/analytics</a>
+        <a href="https://reddit.com/r/AskReddit" target="_blank" rel="noopener" class="channel-item">🔗 r/AskReddit</a>
+        <a href="https://reddit.com/r/kpop" target="_blank" rel="noopener" class="channel-item">🔗 r/kpop</a>
+        <a href="https://reddit.com/r/ManchesterUnited" target="_blank" rel="noopener" class="channel-item">🔗 r/ManchesterUnited</a>
+        <a href="https://reddit.com/r/ThaiGL" target="_blank" rel="noopener" class="channel-item">🔗 r/ThaiGL</a>
+        <a href="https://reddit.com/r/GirlsLove" target="_blank" rel="noopener" class="channel-item">🔗 r/GirlsLove</a>
+      </div>
+    </div>
+  </div>
 </div>
+
+<script>
+// Set current date
+document.getElementById('current-date').textContent = new Date().toLocaleString();
+
+// Fetch news feeds using CORS proxies
+async function fetchNewsFeeds() {
+  const newsContainer = document.getElementById('news-feeds');
+  const feeds = [
+    { url: 'https://feeds.bbci.co.uk/news/uk/rss.xml', title: 'BBC News' },
+    { url: 'https://www.theverge.com/rss/index.xml', title: 'The Verge' },
+    { url: 'https://www.gamespot.com/feeds/mashup', title: 'GameSpot' },
+    { url: 'https://www.wired.com/feed/rss', title: 'WIRED' },
+    { url: 'https://techcrunch.com/feed/', title: 'TechCrunch' },
+    { url: 'https://www.koreaboo.com/feed/', title: 'Koreaboo' },
+    { url: 'https://rss.app/feeds/uTAh28NvFk2AaOES.xml', title: 'AllKpop' },
+    { url: 'https://feed.cnet.com/feed/news', title: 'CNET' }
+  ];
+
+  let newsHTML = '';
+
+  for (const feed of feeds) {
+    try {
+      // Use CORS proxy to avoid CORS issues
+      const proxyUrl = 'https://api.allorigins.win/raw?url=';
+      const response = await fetch(proxyUrl + encodeURIComponent(feed.url));
+      const text = await response.text();
+
+      // Parse RSS (simplified - in production you'd want a proper RSS parser)
+      const items = parseRSS(text);
+      let feedHTML = `<div class="feed-widget"><h3>📖 ${feed.title}</h3>`;
+
+      items.slice(0, 3).forEach(item => {
+        feedHTML += `
+          <div class="feed-item">
+            <a href="${item.link}" target="_blank" rel="noopener">${item.title}</a>
+            <br><small>${item.pubDate || 'Recent'}</small>
+          </div>
+        `;
+      });
+
+      feedHTML += '</div>';
+      newsHTML += feedHTML;
+    } catch (error) {
+      newsHTML += `<div class="feed-widget"><h3>📖 ${feed.title}</h3><div class="error">Failed to load feed</div></div>`;
+    }
+  }
+
+  newsContainer.innerHTML = newsHTML;
+}
+
+// Simple RSS parser
+function parseRSS(xmlText) {
+  const items = [];
+  const titleMatch = xmlText.match(/<title>([^<]+)<\/title>/g);
+  const linkMatch = xmlText.match(/<link>([^<]+)<\/link>/g);
+  const pubDateMatch = xmlText.match(/<pubDate>([^<]+)<\/pubDate>/g);
+
+  if (titleMatch && linkMatch) {
+    for (let i = 0; i < Math.min(titleMatch.length, 5); i++) {
+      const title = titleMatch[i].replace(/<[^>]+>/g, '');
+      const link = linkMatch[i].replace(/<[^>]+>/g, '');
+      const pubDate = pubDateMatch && pubDateMatch[i] ? pubDateMatch[i].replace(/<[^>]+>/g, '') : 'Recent';
+
+      // Skip RSS feed title itself
+      if (!title.toLowerCase().includes('rss') && !title.toLowerCase().includes('feed')) {
+        items.push({ title, link, pubDate });
+      }
+    }
+  }
+
+  return items.slice(0, 5);
+}
+
+// Fetch sports data
+async function fetchSportsData() {
+  const sportsContainer = document.getElementById('sports-data');
+
+  try {
+    // F1 Data - using Ergast API
+    const currentYear = new Date().getFullYear();
+    const f1Response = await fetch(`https://ergast.com/api/f1/${currentYear}/next.json`);
+    const f1Data = await f1Response.json();
+
+    let sportsHTML = '';
+
+    // F1 Next Race
+    if (f1Data.MRData.RaceTable.Races.length > 0) {
+      const race = f1Data.MRData.RaceTable.Races[0];
+      sportsHTML += `<div class="data-item"><strong>Next F1 Race:</strong> ${race.raceName} in ${race.Circuit.Location.country} on ${race.date}</div>`;
+    } else {
+      sportsHTML += `<div class="data-item"><strong>Next F1 Race:</strong> Season starting soon</div>`;
+    }
+
+    // Add other sports data placeholders
+    sportsHTML += `
+      <div class="data-item"><strong>Man United:</strong> Following Premier League</div>
+      <div class="data-item"><strong>NHL Today:</strong> NHL Season ongoing</div>
+    `;
+
+    sportsContainer.innerHTML = sportsHTML;
+  } catch (error) {
+    sportsContainer.innerHTML = `
+      <div class="data-item"><strong>Next F1 Race:</strong> 2024 Season</div>
+      <div class="data-item"><strong>Man United:</strong> Premier League</div>
+      <div class="data-item"><strong>NHL Today:</strong> NHL Season</div>
+    `;
+  }
+}
+
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+  fetchNewsFeeds();
+  fetchSportsData();
+});
+</script>
 
 <style>
 .dashboard-container {
@@ -438,9 +323,15 @@ print('''  </div>
   font-size: 0.95em;
 }
 
-.data-item.error {
-  background: #ffeaa7;
-  border-left-color: #fdcb6e;
+.loading, .error {
+  padding: 10px;
+  text-align: center;
+  color: #7f8c8d;
+  font-style: italic;
+}
+
+.error {
+  color: #e74c3c;
 }
 
 .sports-links {
@@ -479,13 +370,6 @@ print('''  </div>
   }
 }
 </style>
-''')
 EOF
 
-# Run the Python script to generate the dashboard
-python3 scripts/rss_dashboard.py > _pages/dashboard.md
-
-# Cleanup
-rm -f scripts/rss_dashboard.py
-
-echo "Enhanced dashboard built successfully!"
+echo "Client-side dashboard built successfully!"
