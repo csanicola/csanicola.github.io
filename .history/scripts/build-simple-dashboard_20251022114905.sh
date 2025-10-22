@@ -33,7 +33,6 @@ feeds = {
 
 print('<div class="simple-dashboard">')
 print(f'<h2>Personal Dashboard</h2>')
-print(f'<p>A collection of my favorite RSS feeds and current interests.</p>')
 print(f'<p><strong>Last updated:</strong> {datetime.now().strftime("%Y-%m-%d %H:%M")}</p>')
 
 for feed_name, feed_url in feeds.items():
