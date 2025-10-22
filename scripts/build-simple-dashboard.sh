@@ -3,7 +3,7 @@ set -e
 
 echo "Building comprehensive dashboard..."
 
-# Create a Python script to fetch all your feeds
+# Create a Python script with improved APIs
 cat > scripts/rss_dashboard.py << 'EOF'
 import feedparser
 import requests
@@ -25,87 +25,151 @@ def fetch_rss_feed(url, max_items=5):
     except Exception as e:
         return [{'title': f'Error fetching feed: {e}', 'link': '#', 'published': 'Error'}]
 
-def fetch_f1_data(url, title):
+def fetch_f1_data():
     try:
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
+        # Use Ergast API which is more reliable for F1 data
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
 
-            if 'next' in url:
-                # Next race data
-                if data:
-                    race = data[0] if isinstance(data, list) else data
-                    return f"<div class='data-item'><strong>{title}:</strong> {race.get('raceName', 'N/A')} - {race.get('date', 'N/A')}</div>"
+        # Get current season
+        current_year = datetime.now().year
+        base_url = f"http://ergast.com/api/f1/{current_year}"
 
-            elif 'last/race' in url:
-                # Last race results
-                if data and 'Results' in data:
-                    winner = data['Results'][0] if data['Results'] else {}
-                    driver = winner.get('Driver', {})
-                    return f"<div class='data-item'><strong>{title}:</strong> {driver.get('givenName', '')} {driver.get('familyName', '')} ({winner.get('Constructor', {}).get('name', '')})</div>"
+        results = []
 
-            elif 'drivers-championship' in url:
-                # Drivers standings
-                if data and 'Standings' in data:
-                    leader = data['Standings'][0] if data['Standings'] else {}
-                    return f"<div class='data-item'><strong>{title}:</strong> {leader.get('Driver', {}).get('givenName', '')} {leader.get('Driver', {}).get('familyName', '')} - {leader.get('points', 0)} pts</div>"
+        # Next Race
+        try:
+            response = requests.get(f"{base_url}/next.json", headers=headers, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                race = data['MRData']['RaceTable']['Races'][0] if data['MRData']['RaceTable']['Races'] else None
+                if race:
+                    race_name = race['raceName']
+                    race_date = race['date']
+                    circuit = race['Circuit']['circuitName']
+                    results.append(f"<div class='data-item'><strong>Next F1 Race:</strong> {race_name} at {circuit} on {race_date}</div>")
+                else:
+                    results.append("<div class='data-item'><strong>Next F1 Race:</strong> Season ended</div>")
+            else:
+                results.append("<div class='data-item error'><strong>Next F1 Race:</strong> API Error</div>")
+        except:
+            results.append("<div class='data-item error'><strong>Next F1 Race:</strong> Failed to fetch</div>")
 
-            elif 'constructors-championship' in url:
-                # Constructors standings
-                if data and 'Standings' in data:
-                    leader = data['Standings'][0] if data['Standings'] else {}
-                    return f"<div class='data-item'><strong>{title}:</strong> {leader.get('Constructor', {}).get('name', '')} - {leader.get('points', 0)} pts</div>"
+        # Last Race Results
+        try:
+            response = requests.get(f"{base_url}/last/results.json", headers=headers, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                if data['MRData']['RaceTable']['Races']:
+                    race = data['MRData']['RaceTable']['Races'][0]
+                    winner = race['Results'][0]['Driver']
+                    winner_name = f"{winner['givenName']} {winner['familyName']}"
+                    results.append(f"<div class='data-item'><strong>Last F1 Race:</strong> {winner_name} won {race['raceName']}</div>")
+                else:
+                    results.append("<div class='data-item'><strong>Last F1 Race:</strong> No recent races</div>")
+            else:
+                results.append("<div class='data-item error'><strong>Last F1 Race:</strong> API Error</div>")
+        except:
+            results.append("<div class='data-item error'><strong>Last F1 Race:</strong> Failed to fetch</div>")
 
-            return f"<div class='data-item'><strong>{title}:</strong> Data parsed</div>"
-        else:
-            return f"<div class='data-item error'><strong>{title}:</strong> API Error {response.status_code}</div>"
+        # Driver Standings
+        try:
+            response = requests.get(f"{base_url}/driverStandings.json", headers=headers, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                standings = data['MRData']['StandingsTable']['StandingsLists'][0]['DriverStandings'][0]
+                driver = standings['Driver']
+                driver_name = f"{driver['givenName']} {driver['familyName']}"
+                points = standings['points']
+                results.append(f"<div class='data-item'><strong>F1 Drivers Standings:</strong> {driver_name} leads with {points} pts</div>")
+            else:
+                results.append("<div class='data-item error'><strong>F1 Drivers Standings:</strong> API Error</div>")
+        except:
+            results.append("<div class='data-item error'><strong>F1 Drivers Standings:</strong> Failed to fetch</div>")
+
+        # Constructor Standings
+        try:
+            response = requests.get(f"{base_url}/constructorStandings.json", headers=headers, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                standings = data['MRData']['StandingsTable']['StandingsLists'][0]['ConstructorStandings'][0]
+                constructor = standings['Constructor']['name']
+                points = standings['points']
+                results.append(f"<div class='data-item'><strong>F1 Constructors:</strong> {constructor} leads with {points} pts</div>")
+            else:
+                results.append("<div class='data-item error'><strong>F1 Constructors:</strong> API Error</div>")
+        except:
+            results.append("<div class='data-item error'><strong>F1 Constructors:</strong> Failed to fetch</div>")
+
+        return "".join(results)
+
     except Exception as e:
-        return f"<div class='data-item error'><strong>{title}:</strong> Error: {str(e)}</div>"
+        return f"<div class='data-item error'><strong>F1 Data:</strong> General error: {str(e)}</div>"
 
-def fetch_sports_data(url, title):
+def fetch_sports_data():
     try:
-        headers = {}
-        # Add User-Agent to avoid 403 errors
-        headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+        results = []
 
-        response = requests.get(url, headers=headers, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-
-            if 'football-data' in url:
-                # Manchester United fixtures
-                matches = data.get('matches', [])
-                next_match = None
-                for match in matches:
-                    if match.get('status') == 'SCHEDULED':
-                        next_match = match
+        # Manchester United - Use a simpler API
+        try:
+            # Using a free football API without authentication
+            response = requests.get("https://api.football-data.org/v4/competitions/PL/matches?status=SCHEDULED",
+                                  headers=headers, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                man_utd_match = None
+                for match in data.get('matches', []):
+                    if match.get('homeTeam', {}).get('name') == 'Manchester United FC' or match.get('awayTeam', {}).get('name') == 'Manchester United FC':
+                        man_utd_match = match
                         break
 
-                if next_match:
-                    home_team = next_match.get('homeTeam', {}).get('name', 'TBD')
-                    away_team = next_match.get('awayTeam', {}).get('name', 'TBD')
-                    date = next_match.get('utcDate', 'TBD')[:10]
-                    return f"<div class='data-item'><strong>{title}:</strong> {home_team} vs {away_team} on {date}</div>"
+                if man_utd_match:
+                    home_team = man_utd_match['homeTeam']['name']
+                    away_team = man_utd_match['awayTeam']['name']
+                    date = man_utd_match['utcDate'][:10]
+                    results.append(f"<div class='data-item'><strong>Man United:</strong> {home_team} vs {away_team} on {date}</div>")
                 else:
-                    return f"<div class='data-item'><strong>{title}:</strong> No upcoming matches</div>"
+                    results.append("<div class='data-item'><strong>Man United:</strong> No upcoming matches found</div>")
+            else:
+                # Fallback to static info
+                results.append("<div class='data-item'><strong>Man United:</strong> Check official site for fixtures</div>")
+        except:
+            results.append("<div class='data-item'><strong>Man United:</strong> Fixtures unavailable</div>")
 
-            elif 'nhl' in url:
-                # NHL data
-                games = data.get('games', [])
-                today_games = [game for game in games if game.get('gameState') == 'LIVE' or game.get('gameState') == 'FUTURE']
-                if today_games:
-                    game = today_games[0]
-                    home_team = game.get('homeTeam', {}).get('name', {}).get('default', 'Home')
-                    away_team = game.get('awayTeam', {}).get('name', {}).get('default', 'Away')
-                    return f"<div class='data-item'><strong>{title}:</strong> {away_team} vs {home_team}</div>"
+        # NHL Data - Improved parsing
+        try:
+            response = requests.get("https://api-web.nhle.com/v1/score/now", headers=headers, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                games_today = []
+
+                for game in data.get('games', []):
+                    game_state = game.get('gameState')
+                    if game_state in ['LIVE', 'FUTURE', 'CRITICAL']:
+                        home_team = game.get('homeTeam', {}).get('name', {}).get('default', 'Home')
+                        away_team = game.get('awayTeam', {}).get('name', {}).get('default', 'Away')
+
+                        if game_state == 'LIVE':
+                            home_score = game.get('homeTeam', {}).get('score', 0)
+                            away_score = game.get('awayTeam', {}).get('score', 0)
+                            games_today.append(f"{away_team} {away_score}-{home_score} {home_team} (LIVE)")
+                        elif game_state == 'FUTURE':
+                            start_time = game.get('startTimeUTC', '')[:16]
+                            games_today.append(f"{away_team} vs {home_team} at {start_time}")
+
+                if games_today:
+                    results.append(f"<div class='data-item'><strong>NHL Today:</strong> {', '.join(games_today[:2])}</div>")
                 else:
-                    return f"<div class='data-item'><strong>{title}:</strong> No games today</div>"
+                    results.append("<div class='data-item'><strong>NHL Today:</strong> No games scheduled</div>")
+            else:
+                results.append("<div class='data-item error'><strong>NHL Today:</strong> API Error</div>")
+        except Exception as e:
+            results.append(f"<div class='data-item error'><strong>NHL Today:</strong> Failed to fetch</div>")
 
-            return f"<div class='data-item'><strong>{title}:</strong> Data loaded</div>"
-        else:
-            return f"<div class='data-item error'><strong>{title}:</strong> API Error {response.status_code}</div>"
+        return "".join(results)
+
     except Exception as e:
-        return f"<div class='data-item error'><strong>{title}:</strong> Error: {str(e)}</div>"
+        return f"<div class='data-item error'><strong>Sports Data:</strong> General error</div>"
 
 # Generate the dashboard content
 print('''---
@@ -155,27 +219,11 @@ print('''    </div>''')
 print('''    <div class="dashboard-section">
       <h2>🏆 Sports & Formula 1</h2>''')
 
-# F1 Data
-f1_endpoints = [
-    ('https://f1api.dev/api/current/next', 'Next F1 Race'),
-    ('https://f1api.dev/api/current/last/race', 'Last F1 Race'),
-    ('https://f1api.dev/api/current/drivers-championship', 'F1 Drivers Standings'),
-    ('https://f1api.dev/api/current/constructors-championship', 'F1 Constructors Standings')
-]
+# Fetch F1 Data
+print(fetch_f1_data())
 
-for url, title in f1_endpoints:
-    print(fetch_f1_data(url, title))
-    time.sleep(0.5)
-
-# Sports Data
-sports_endpoints = [
-    ('https://api.football-data.org/v4/teams/66/matches?status=SCHEDULED,FINISHED', 'Manchester United'),
-    ('https://api-web.nhle.com/v1/score/now', 'NHL Today')
-]
-
-for url, title in sports_endpoints:
-    print(fetch_sports_data(url, title))
-    time.sleep(0.5)
+# Fetch Sports Data
+print(fetch_sports_data())
 
 print('''    </div>''')
 
