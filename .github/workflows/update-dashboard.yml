@@ -18,13 +18,19 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y imagemagick python3-pip
+        pip3 install feedparser jupyter
+        
     - name: Setup Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.x'
         
     - name: Install Python dependencies
-      run: pip install feedparser
+      run: pip install feedparser jupyter
         
     - name: Build Dashboard
       run: ./scripts/build-simple-dashboard.sh
@@ -36,7 +42,17 @@ jobs:
         bundler-cache: true
         
     - name: Build site with Jekyll
-      run: bundle exec jekyll build
+      run: |
+        # Remove problematic files that cause build errors
+        rm -f assets/jupyter/blog.ipynb 2>/dev/null || true
+        bundle exec jekyll build
+      
+    - name: Debug - Check if dashboard exists
+      run: |
+        echo "Checking built dashboard:"
+        find _site -name "*dashboard*" -type f
+        echo "Contents of _pages:"
+        ls -la _pages/
       
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
