@@ -1,0 +1,1026 @@
+server:
+  assets-path: /app/assets
+
+theme:
+  # Note: assets are cached by the browser, changes to the CSS file
+  # will not be reflected until the browser cache is cleared (Ctrl+F5)
+  # custom-css-file: /assets/user.css
+  background-color: 225 14 15
+  primary-color: 157 47 65
+  contrast-multiplier: 1.1
+
+pages:
+- name: Home
+  # Optionally, if you only have a single page you can hide the desktop navigation for a cleaner look
+  # hide-desktop-navigation: true
+  columns:
+    - size: small
+      widgets:
+        - type: calendar
+          first-day-of-week: monday
+
+        - type: rss
+          limit: 10
+          collapse-after: 3
+          cache: 12h
+          feeds:
+            - url: https://feeds.bbci.co.uk/news/uk/rss.xml
+              title: BBC News
+            - url: https://www.theverge.com/rss/index.xml
+              title: The Verge
+            - url: https://www.gamespot.com/feeds/mashup
+              title: GameSpot
+            - url: https://www.wired.com/feed/rss
+              title: WIRED
+            - url: https://techcrunch.com/feed/
+              title: TechCrunch
+            - url: https://www.koreaboo.com/feed/
+              title: Koreaboo
+            - url: https://rss.app/feeds/uTAh28NvFk2AaOES.xml
+              title: AllKpop
+            - url: https://feed.cnet.com/feed/news
+              title: CNET
+
+        - type: twitch-channels
+          channels:
+            - trackingthepros
+            - amazonian
+            - jakenbakelive
+            - lck
+            - lpl
+            - lec
+            - eeowna
+            - EJ_SA
+            - vanillamace
+
+        - type: custom-api
+          title: Next Race
+          cache: 2h
+          url: https://f1api.dev/api/current/next
+          template: |
+            <div class="flex flex-column gap-10">
+              {{ $session := index (.JSON.Array "race") 0 }}
+              <p class="size-h5">
+                Round {{ .JSON.String "round" }}
+              </p>
+        
+              <div class="margin-block-4">
+                <p class="color-highlight">{{ $session.String "raceName" }}</p>
+                <p class="color-primary">
+                  <span>Race</span>
+                  {{ $datetime := concat ($session.String "schedule.race.date") "T" ($session.String "schedule.race.time") }}
+                  <span
+                    class="color-highlight"
+                    title="{{ $session.String "schedule.race.date" }}"
+                    {{ parseRelativeTime "rfc3339" $datetime }}
+                  ></span>
+                </p>
+                <p class="size-h5">{{ $session.String "schedule.race.date" }} at {{ $session.String "schedule.race.time" }}</p>
+              </div>
+
+              <ul class="size-h5 attachments">
+                <li>{{ $session.String "circuit.country" }}</li>
+                <li>{{ $session.String "circuit.city" }}</li>
+                <li>{{ $session.String "circuit.circuitName" }}</li>
+              </ul>
+            </div>
+
+        - type: custom-api
+          title: Last Race Results
+          cache: 1d
+          url: https://f1api.dev/api/current/last/race
+          template: |
+            <div class="flex flex-column gap-10">
+              <p class="size-h5">{{ .JSON.String "races.raceName" }}</p>
+              <ul class="list collapsible-container" data-collapse-after="5">
+                {{ range $i, $v := .JSON.Array "races.results" }}
+                <li class="flex items-center {{ if eq $i 0 }}color-primary{{ else if eq $i 1 }}color-highlight{{ end }}">
+                  <span class="grow min-width-0">{{ .String "position" }}. {{ .String "driver.shortName" }}</span>
+                  <span class="shrink-0 text-right">{{ .String "time" }}</span>
+                </li>
+                {{ end }}
+              </ul>
+            </div>
+
+        - type: custom-api
+          title: Drivers Standings
+          cache: 1d
+          url: https://f1api.dev/api/current/drivers-championship
+          template: |
+            <ul class="list collapsible-container" data-collapse-after="5">
+              {{ range $i, $v := .JSON.Array "drivers_championship" }}
+              <li class="flex items-center {{ if eq $i 0 }}color-primary{{ else if eq $i 1 }}color-highlight{{ end }}">
+                <div class="grow min-width-0">
+                  <span>{{ .String "position" }}. {{ .String "driver.shortName" }}</span>
+                  <span class="size-h6">({{ .String "team.teamName" }})</span>
+                </div>
+                <span class="shrink-0 text-right">{{ .String "points" }}</span>
+              </li>
+              {{ end }}
+            </ul>
+
+        - type: custom-api
+          title: Constructors Standings
+          cache: 1d
+          url: https://f1api.dev/api/current/constructors-championship
+          template: |
+            <ul class="list collapsible-container" data-collapse-after="5">
+              {{ range $i, $v := .JSON.Array "constructors_championship" }}
+              <li class="flex items-center {{ if eq $i 0 }}color-primary{{ else if eq $i 1 }}color-highlight{{ end }}">
+                <span class="grow min-width-0">{{ .String "position" }}. {{ .String "team.teamName" }}</span>
+                <span class="shrink-0 text-right">{{ .String "points" }}</span>
+              </li>
+              {{ end }}
+            </ul>
+
+        - type: custom-api
+          title: Next Race
+          cache: 1h
+          url: https://f1api.dev/api/current/next?timezone=Europe/London
+          template: |
+            <div class="flex flex-column gap-10">
+              {{ $session := index (.JSON.Array "race") 0 }}
+              <p class="size-h5">
+                Round {{ .JSON.String "round" }}
+              </p>
+        
+              <div class="margin-block-4">
+                <p class="color-highlight">{{ $session.String "raceName" }}</p>
+
+                <div class="margin-block-10"></div>
+
+                <!-- Race -->
+                <p class="color-primary">
+                  <span>Race</span>
+                  {{ $raceDate := $session.String "schedule.race.date" }}
+                  {{ $raceTime := $session.String "schedule.race.time" }}
+                  {{ $raceDateTime := concat $raceDate "T" $raceTime }}
+                  {{ $parsedRaceTime := parseLocalTime "2006-01-02T15:04:05" $raceDateTime }}
+                  {{ $now := now }}
+                  {{ if $parsedRaceTime.Before $now }}
+                    <span class="color-highlight">Completed</span>
+                  {{ else }}
+            <span class="color-highlight" {{ $parsedRaceTime | toRelativeTime }}></span>
+                  {{ end }}
+                </p>
+                <p class="size-h5">{{ $raceDate }} at {{ $raceTime }}</p>
+
+                <!-- Qualifying -->
+                <p class="color-primary">
+                  <span>Qualifying</span>
+                  {{ $qualyDate := $session.String "schedule.qualy.date" }}
+                  {{ $qualyTime := $session.String "schedule.qualy.time" }}
+                  {{ $qualyDateTime := concat $qualyDate "T" $qualyTime }}
+                  {{ $parsedQualyTime := parseLocalTime "2006-01-02T15:04:05" $qualyDateTime }}
+                  {{ $now := now }}
+                  {{ if $parsedQualyTime.Before $now }}
+                    <span class="color-highlight">Completed</span>
+                  {{ else }}
+                    <span class="color-highlight" {{ $parsedQualyTime | toRelativeTime }}></span>
+                  {{ end }}
+                </p>
+                <p class="size-h5">{{ $qualyDate }} at {{ $qualyTime }}</p>
+
+                <!-- Free Practice 1 -->
+                <p class="color-primary">
+                  <span>Free Practice 1</span>
+                  {{ $fp1Date := $session.String "schedule.fp1.date" }}
+                  {{ $fp1Time := $session.String "schedule.fp1.time" }}
+                  {{ $fp1DateTime := concat $fp1Date "T" $fp1Time }}
+                  {{ $parsedFP1Time := parseLocalTime "2006-01-02T15:04:05" $fp1DateTime }}
+                  {{ $now := now }}
+                  {{ if $parsedFP1Time.Before $now }}
+                    <span class="color-highlight">Completed</span>
+                  {{ else }}
+                    <span class="color-highlight" {{ $parsedFP1Time | toRelativeTime }}></span>
+                  {{ end }}
+                </p>
+                <p class="size-h5">{{ $fp1Date }} at {{ $fp1Time }}</p>
+
+                <!-- Free Practice 2 -->
+                <p class="color-primary">
+                  <span>Free Practice 2</span>
+                  {{ $fp2Date := $session.String "schedule.fp2.date" }}
+                  {{ $fp2Time := $session.String "schedule.fp2.time" }}
+                  {{ $fp2DateTime := concat $fp2Date "T" $fp2Time }}
+                  {{ $parsedFP2Time := parseLocalTime "2006-01-02T15:04:05" $fp2DateTime }}
+                  {{ $now := now }}
+                  {{ if $parsedFP2Time.Before $now }}
+                    <span class="color-highlight">Completed</span>
+                  {{ else }}
+                    <span class="color-highlight" {{ $parsedFP2Time | toRelativeTime }}></span>
+                  {{ end }}
+                </p>
+                <p class="size-h5">{{ $fp2Date }} at {{ $fp2Time }}</p>
+
+                <!-- Free Practice 3 -->
+                <p class="color-primary">
+                  <span>Free Practice 3</span>
+                  {{ $fp3Date := $session.String "schedule.fp3.date" }}
+                  {{ $fp3Time := $session.String "schedule.fp3.time" }}
+                  {{ $fp3DateTime := concat $fp3Date "T" $fp3Time }}
+                  {{ $parsedFP3Time := parseLocalTime "2006-01-02T15:04:05" $fp3DateTime }}
+                  {{ $now := now }}
+                  {{ if $parsedFP3Time.Before $now }}
+                    <span class="color-highlight">Completed</span>
+                  {{ else }}
+                    <span class="color-highlight" {{ $parsedFP3Time | toRelativeTime }}></span>
+                  {{ end }}
+                </p>
+                <p class="size-h5">{{ $fp3Date }} at {{ $fp3Time }}</p>
+
+                <!-- Sprint Qualifying - only if date is not null -->
+                {{ if and (ne ($session.String "schedule.sprintQualy.date") "null") (ne ($session.String "schedule.sprintQualy.date") "") }}
+                <p class="color-primary">
+                  <span>Sprint Qualifying</span>
+                  {{ $sprintQualyDate := $session.String "schedule.sprintQualy.date" }}
+                  {{ $sprintQualyTime := $session.String "schedule.sprintQualy.time" }}
+                  {{ $sprintQualyDateTime := concat $sprintQualyDate "T" $sprintQualyTime }}
+                  {{ $parsedSprintQualyTime := parseLocalTime "2006-01-02T15:04:05" $sprintQualyDateTime }}
+                  {{ $now := now }}
+                  {{ if $parsedSprintQualyTime.Before $now }}
+                    <span class="color-highlight">Completed</span>
+                  {{ else }}
+                    <span class="color-highlight" {{ $parsedSprintQualyTime | toRelativeTime }}></span>
+                  {{ end }}
+                </p>
+                <p class="size-h5">{{ $sprintQualyDate }} at {{ $sprintQualyTime }}</p>
+                {{ end }}
+
+                <!-- Sprint Race - only if date is not null -->
+                {{ if and (ne ($session.String "schedule.sprintRace.date") "null") (ne ($session.String "schedule.sprintRace.date") "") }}
+                <p class="color-primary">
+                  <span>Sprint Race</span>
+                  {{ $sprintRaceDate := $session.String "schedule.sprintRace.date" }}
+                  {{ $sprintRaceTime := $session.String "schedule.sprintRace.time" }}
+                  {{ $sprintRaceDateTime := concat $sprintRaceDate "T" $sprintRaceTime }}
+                  {{ $parsedSprintRaceTime := parseLocalTime "2006-01-02T15:04:05" $sprintRaceDateTime }}
+                  {{ $now := now }}
+                  {{ if $parsedSprintRaceTime.Before $now }}
+                    <span class="color-highlight">Completed</span>
+                  {{ else }}
+                    <span class="color-highlight" {{ $parsedSprintRaceTime | toRelativeTime }}></span>
+                  {{ end }}
+                </p>
+                <p class="size-h5">{{ $sprintRaceDate }} at {{ $sprintRaceTime }}</p>
+                {{ end }}
+              </div>
+        
+              <ul class="size-h5 attachments">
+                <li>{{ $session.String "circuit.country" }}</li>
+                <li>{{ $session.String "circuit.city" }}</li>
+                <li>{{ $session.String "laps" }} Laps</li>
+                <li>{{ $session.String "circuit.circuitName" }}</li>
+              </ul>
+            </div>
+
+    - size: full
+      widgets:
+        - type: group
+          widgets:
+            - type: hacker-news
+            - type: lobsters
+
+        - type: videos
+          channels:
+            - UCXuqSBlHAE6Xw-yeJA0Tunw # Linus Tech Tips
+            - UCpqXJOEqGS-TCnazcHCo0rA # theRadBrad
+            - UCo9ZZ04kIhN_8xGxvnjaduQ # Stephanie Soo
+            - UC0JJtK3m8pwy6rVgnBz47Rw # Rotten Mango
+            - UCabq3No3wXbs6Ut-Pux6SzA # The TRY Channel
+            - UCZ0p2Bqvtgy7XnEvis4l2FQ # The Unsolicited Truth
+            - UC2sgoh6YCrf8df1UMpUciTw # Trixie & Katya
+            - UCfpaSruWW3S4dibonKXENjA # Tzuyang
+            - UC2B5onlYkZ7IaVekR9yIB6w # Gongsam Table
+            - UCT5C7yaO3RVuOgwP8JVAujQ # Taskmaster
+            - UCAL3JXZSzSm8AlZyD3nQdBA # Primitive Technology
+            - UCBs2Y3i14e1NWQxOGliatmg # Mother's Basement
+            - UC7dF9qfBMXrSlaaFFDvV_Yg # Gigguk
+            - UC1Dp1VItMV-YbB9Nj7qaXjg # Nickcompoops
+            - UCBs2Y3i14e1NWQxOGliatmg # Mother's Basement
+            # kpop specific channels
+            - UCk9GmdlDTBfgGRb7vXeRMoQ # Red Velvet
+            - UCxkWBN3nHuo0sCz0GBVWWaQ # Chaeyeon
+            - UCJnL-TBcsYrF2SLs7tmiC8Q # tripleS
+            - UCyPwRgc3gQGqhk6RoGS50Ug # SHINee
+            - UC3SyT4_WLHzN7JmHQwKQZww # IU
+            - UCeXaojJKJ9DVFkVM6O6drBQ # Minho
+            - UCuhAUMLzJxlP1W7mEk0_6lA # Mamamoo
+            - UCiM8arBZ-GyuBFG3wy6fEgw # Hwasa
+            - UCzgxx_DM2Dcb9Y1spb9mUJA # Twice
+
+        - type: group
+          widgets:
+            - type: reddit
+              subreddit: technology
+              show-thumbnails: true
+            - type: reddit
+              subreddit: ObsidianMD
+              show-thumbnails: true
+            - type: reddit
+              subreddit: analytics
+              show-thumbnails: true
+            - type: reddit
+              subreddit: AskReddit
+              show-thumbnails: true
+            - type: reddit
+              subreddit: kpop
+              show-thumbnails: true
+            - type: reddit
+              subreddit: ManchesterUnited
+              show-thumbnails: true
+            - type: reddit
+              subreddit: ThaiGL
+              show-thumbnails: true
+            - type: reddit
+              subreddit: GirlsLove
+              show-thumbnails: true
+
+        - type: custom-api
+          title: Football Fixtures
+          cache: 30m
+
+          url: https://api.football-data.org/v4/teams/66/matches?status=SCHEDULED,FINISHED
+
+          headers:
+            X-Auth-Token: fe55f8d41b3c49eba3ddc9be52c6ea8c
+
+          template: |
+            <div class="football-fixtures" style="padding: 10px;">
+              {{ $timezoneOffsetHours := -5 }}
+
+              {{ $jsonData := .JSON }}
+              {{ $matches := $jsonData.Array "matches" }}
+              {{ $matchCount := len $matches }}
+
+              {{/* --- Last Match --- */}}
+              <div style="margin-bottom: 12px;">
+                <div class="color-subdue" style="font-size: 0.8em; margin-bottom: 2px; text-transform: uppercase;">Last Match</div>
+                {{ $lastFound := false }}
+                {{ $lastHomeTeam := "N/A" }}
+                {{ $lastAwayTeam := "N/A" }}
+                {{ $lastHomeScore := "?" }}
+                {{ $lastAwayScore := "?" }}
+                {{ $lastDate := "N/A" }}
+
+                {{ range $matches }}
+                  {{ $matchData := .Value }} {{/* Get underlying map/object */}}
+                  {{ $status := index $matchData "status" }}
+                  {{ if and $status (eq ($status | printf "%s") "FINISHED") }}
+                    {{ $lastFound = true }}
+
+                    {{ $homeTeamObj := index $matchData "homeTeam" }}
+                    {{ $awayTeamObj := index $matchData "awayTeam" }}
+                    {{ if $homeTeamObj }}{{ $lastHomeTeam = index $homeTeamObj "name" | printf "%s" }}{{ else }}{{ $lastHomeTeam = "N/A" }}{{ end }}
+                    {{ if $awayTeamObj }}{{ $lastAwayTeam = index $awayTeamObj "name" | printf "%s" }}{{ else }}{{ $lastAwayTeam = "N/A" }}{{ end }}
+
+                    {{ $lastHomeScore = "?" }} {{/* Default */}}
+                    {{ $lastAwayScore = "?" }} {{/* Default */}}
+                    {{ $scoreObj := index $matchData "score" }}
+                    {{ if $scoreObj }}
+                      {{ $fullTimeObj := index $scoreObj "fullTime" }}
+                      {{ if $fullTimeObj }}
+                        {{ $homeScoreVal := index $fullTimeObj "home" }}
+                        {{ $awayScoreVal := index $fullTimeObj "away" }}
+                        {{/* Check if score value is not nil before formatting */}}
+                        {{ if ne $homeScoreVal nil }} {{/* Check for not nil */}}
+                            {{ $lastHomeScore = $homeScoreVal | printf "%.0f" }}
+                        {{ else }}
+                            {{ $lastHomeScore = "?" }}
+                        {{ end }}
+                        {{ if ne $awayScoreVal nil }} {{/* Check for not nil */}}
+                            {{ $lastAwayScore = $awayScoreVal | printf "%.0f" }}
+                        {{ else }}
+                            {{ $lastAwayScore = "?" }}
+                        {{ end }}
+                      {{ end }}
+                    {{ end }}
+
+                    {{ $dateVal := index $matchData "utcDate" }}
+                    {{ if $dateVal }}{{ $lastDate = $dateVal | printf "%s" }}{{ else }}{{ $lastDate = "N/A" }}{{ end }}
+                  {{ end }}
+                {{ end }}
+
+                {{/* --- Display Last Match --- */}}
+                {{ if $lastFound }}
+                  <div class="color-primary" style="font-size: 1.1em;">
+                    {{ $lastHomeTeam }} {{ $lastHomeScore }} - {{ $lastAwayScore }} {{ $lastAwayTeam }}
+                  </div>
+                  {{ $dateStr := $lastDate }}
+                  {{ if and $dateStr (ne $dateStr "N/A") (ge (len $dateStr) 16) }}
+                    {{ $year := slice $dateStr 0 4 }}
+                    {{ $month := slice $dateStr 5 7 }}
+                    {{ $day := slice $dateStr 8 10 }}
+                    {{ $hour := slice $dateStr 11 13 }}
+                    {{ $minute := slice $dateStr 14 16 }}
+                    <div class="color-subdue" style="font-size: 0.9em;">
+                      {{ $day }}-{{ $month }}-{{ $year }} {{ $hour }}:{{ $minute }} UTC
+                      {{/* Display the offset */}}
+                      {{ if $timezoneOffsetHours }}
+                        (Offset: {{ printf "%+d" $timezoneOffsetHours }}h)
+                      {{ end }}
+                    </div>
+                  {{ else if $dateStr }}
+                    {{/* Fallback if date string is not in expected format */}}
+                    <div class="color-subdue" style="font-size: 0.9em;">{{ $dateStr }}</div>
+                  {{ end }}
+                {{ else }}
+                  <div class="color-subdue" style="font-size: 1.1em;">No finished matches found</div>
+                {{ end }}
+              </div>
+        
+              {{/* --- Next Match --- */}}
+              <div>
+                <div class="color-subdue" style="font-size: 0.8em; margin-bottom: 2px; text-transform: uppercase;">Next Match</div>
+                {{ $nextFound := false }}
+                {{ $nextHomeTeam := "N/A" }}
+                {{ $nextAwayTeam := "N/A" }}
+                {{ $nextDate := "N/A" }}
+
+                {{ range $matches }}
+                  {{ $matchData := .Value }}
+                  {{ if not $nextFound }}
+                    {{ $status := index $matchData "status" }}
+                    {{ if $status }}
+                      {{ $statusStr := $status | printf "%s" }}
+                      {{/* The API might use TIMED or SCHEDULED for upcoming */}}
+                      {{ if or (eq $statusStr "SCHEDULED") (eq $statusStr "TIMED") }}
+                        {{ $nextFound = true }}
+                        {{ $homeTeamObj := index $matchData "homeTeam" }}
+                        {{ $awayTeamObj := index $matchData "awayTeam" }}
+                        {{ if $homeTeamObj }}{{ $nextHomeTeam = index $homeTeamObj "name" | printf "%s" }}{{ else }}{{ $nextHomeTeam = "N/A" }}{{ end }}
+                        {{ if $awayTeamObj }}{{ $nextAwayTeam = index $awayTeamObj "name" | printf "%s" }}{{ else }}{{ $nextAwayTeam = "N/A" }}{{ end }}
+                        {{ $dateVal := index $matchData "utcDate" }}
+                        {{ if $dateVal }}{{ $nextDate = $dateVal | printf "%s" }}{{ else }}{{ $nextDate = "N/A" }}{{ end }}
+                      {{ end }}
+                    {{ end }}
+                  {{ end }}
+                {{ end }}
+
+                {{/* --- Display Next Match --- */}}
+                {{ if $nextFound }}
+                  <div class="color-primary" style="font-size: 1.1em;">
+                    {{ $nextHomeTeam }} vs {{ $nextAwayTeam }}
+                  </div>
+                  {{ $dateStr := $nextDate }}
+                  {{ if and $dateStr (ne $dateStr "N/A") (ge (len $dateStr) 16) }}
+                    {{ $year := slice $dateStr 0 4 }}
+                    {{ $month := slice $dateStr 5 7 }}
+                    {{ $day := slice $dateStr 8 10 }}
+                    {{ $hour := slice $dateStr 11 13 }}
+                    {{ $minute := slice $dateStr 14 16 }}
+                    <div class="color-subdue" style="font-size: 0.9em;">
+                      {{ $day }}-{{ $month }}-{{ $year }} {{ $hour }}:{{ $minute }} UTC
+                      {{/* Display the offset */}}
+                      {{ if $timezoneOffsetHours }}
+                        (Offset: {{ printf "%+d" $timezoneOffsetHours }}h)
+                      {{ end }}
+                    </div>
+                  {{ else if $dateStr }}
+                    {{/* Fallback if date string is not in expected format */}}
+                    <div class="color-subdue" style="font-size: 0.9em;">{{ $dateStr }}</div>
+                  {{ end }}
+                {{ else }}
+                  <div class="color-subdue" style="font-size: 1.1em;">No upcoming matches found</div>
+                {{ end }}
+              </div>
+            </div>
+
+        - type: custom-api
+          title: NHL Today
+          cache: 5s
+          url: https://api-web.nhle.com/v1/score/now
+          template: |
+            {{ $myTeam := "NYR" }}
+            {{ $games := .JSON.Array "games" }}
+            {{ define "gameItem" }}
+              {{ $toolTipEnabled := true }}
+              {{ $awayTeamColor := "" }}
+              {{ $homeTeamColor := "" }}
+              {{ $situationDescriptionHome := "" }}
+              {{ $situationDescriptionAway := "" }}
+              {{ $situationStrength := "" }}
+              {{ $homeTeam := .String "homeTeam.abbrev" }}
+              {{ $awayTeam := .String "awayTeam.abbrev" }}
+              {{ $homeTeamScores := "" }}
+              {{ $awayTeamScores := "" }}
+              {{ range $index, $desc := .Array "goals" }}
+                  {{ $teamAbbrev := .String "teamAbbrev" }}
+                  {{ $playerName := .String "name.default" }}
+                  {{ $timeScored := .String "timeInPeriod" }}
+                  {{ $periodScored := .Int "period" }}
+                  {{ if eq $awayTeam $teamAbbrev }}
+                      {{ $awayTeamScores = (printf "%s %s %s(%d)" $awayTeamScores $playerName $timeScored $periodScored) }}
+                  {{ else if eq $homeTeam $teamAbbrev }}
+                      {{ $homeTeamScores = (printf "%s %s %s(%d)" $homeTeamScores $playerName $timeScored $periodScored) }}
+                  {{ end }}
+              {{ end }}
+              {{ $gameState := .String "gameState" }}
+              {{ $currentLabel := "" }}
+              {{ if or (eq $gameState "OFF") (eq $gameState "FINAL") }}
+                  {{ $lastPeriodType := .String "gameOutcome.lastPeriodType" }}
+                  {{ $currentLabel = "Final" }}
+                  {{ if or (eq $lastPeriodType "OT") (eq $lastPeriodType "SO") }}
+                      {{ $currentLabel = (printf "%s %s" $currentLabel $lastPeriodType) }}
+                  {{ end }}
+              {{ end }}
+              {{ if or (eq $gameState "FUT") (eq $gameState "PRE") }}
+                  {{ $gameTime := (.String "startTimeUTC" | parseTime "rfc3339").In now.Location }}
+                  {{ $currentLabel = (printf "%02d:%02d" $gameTime.Hour $gameTime.Minute) }}
+              {{ end }}
+              {{ if or (eq $gameState "LIVE") (eq $gameState "CRIT") }}
+                  {{ $period := .Int "period" }}
+                  {{ $periodString := .String "period" }}
+                  {{ $timeRemaining := .String "clock.timeRemaining" }}
+                  {{ $intermission := .Int "clock.inIntermission" }}
+                  {{ $periodType := .String "periodDescriptor.periodType" }}
+                  {{ if eq $period 1 }}
+                  {{ $addonValue := "st" }}
+                  {{ if eq $intermission 1 }}
+                      {{ $addonValue = printf "%s Int" $addonValue }}
+                  {{ end }}
+                  {{ $currentLabel = (printf "%s%s %s" $periodString $addonValue $timeRemaining) }}
+                  {{ else if eq $period 2 }}
+                      {{ $addonValue := "nd" }}
+                      {{ if eq $intermission 1 }}
+                          {{ $addonValue = printf "%s Int" $addonValue }}
+                      {{ end }}
+                  {{ $currentLabel = (printf "%s%s %s" $periodString $addonValue $timeRemaining) }}
+                  {{ else if eq $period 3 }}
+                      {{ $addonValue := "rd" }}
+                      {{ if eq $intermission 1 }}
+                          {{ $addonValue = printf "%s Int" $addonValue }}
+                      {{ end }}
+                  {{ $currentLabel = (printf "%s%s %s" $periodString $addonValue $timeRemaining) }}
+                  {{ else }}
+                  {{ $currentLabel = $periodType }} 
+                      {{ if not (eq $periodType "SO") }}
+                          {{ $currentLabel = (printf "%s %s" $periodType $timeRemaining) }}
+                      {{ end }}
+                  {{ end }}
+              {{ end }}
+              {{ if .Exists "situation" }}
+                  {{ if .Exists "situation.awayTeam.situationDescriptions" }}
+                      {{ $awayTeamColor = "color-negative" }}
+                      {{ range $index, $desc := .Array "situation.awayTeam.situationDescriptions" }}
+                            {{ $situationDescriptionAway = (printf "%s %s" $situationDescriptionAway $desc.Value) }}
+                      {{ end }} 
+                  {{ end }}
+                  {{ if .Exists "situation.homeTeam.situationDescriptions" }}
+                      {{ $homeTeamColor = "color-positive" }}
+                      {{ range $index, $desc := .Array "situation.homeTeam.situationDescriptions" }}
+                          {{ $situationDescriptionHome = (printf "%s %s" $situationDescriptionHome $desc.Value) }}
+                      {{ end }}
+                  {{ end }}
+                {{ $situationStrength = concat "(" (.String "situation.awayTeam.strength") "v" (.String "situation.homeTeam.strength") ")" }}
+              {{ end }}
+              <table>
+                  <tr>
+                      <td>
+                          <a target="_blank" class="size-h3 color-highlight block text-truncate" href="https://www.nhl.com{{ .String "gameCenterLink" }}/">
+                            <span class= {{ $awayTeamColor }} > {{ .String "awayTeam.name.default" }} </span> vs <span class= {{ $homeTeamColor }} > {{ .String "homeTeam.name.default" }} </span>
+                          </a>
+                      </td>
+                  </tr>
+                  <tr>
+                      <td>
+                          <span class= {{ $awayTeamColor }} > {{ $situationDescriptionAway }} </span> <span class= {{ $homeTeamColor }} > {{ $situationDescriptionHome }} </span> <span> {{ .String "situation.timeRemaining" }} {{ $situationStrength }}</span>
+                      </td>
+                  </tr>
+              </table>
+              <table>
+                  <tr>
+                      <td data-popover-type="html">
+                          {{ if and (not (eq $awayTeamScores "")) (eq $toolTipEnabled true) }}
+                              <div data-popover-html>
+                                {{ $awayTeamScores }}
+                              </div>
+                          {{ end }}
+                        <img style="float: left" width="50" height="auto" src={{ .String "awayTeam.logo" }}>
+                      </td>
+                      <td data-popover-type="html">
+                          {{ if and (not (eq $awayTeamScores "")) (eq $toolTipEnabled true) }}
+                            <div data-popover-html>
+                              {{ $awayTeamScores }}
+                            </div>
+                          {{ end }}
+                        <p style="font-size:25px"> {{ .String "awayTeam.score" }} </p>
+                      </td>
+                      <td>
+                          <p style="font-size:25px">-</p>
+                      </td>
+                      <td data-popover-type="html">
+                        {{ if and (not (eq $homeTeamScores "")) (eq $toolTipEnabled true) }}
+                          <div data-popover-html>
+                            {{ $homeTeamScores }}
+                          </div>
+                        {{ end }}
+                        <p style="font-size:25px"> {{ .String "homeTeam.score" }} </p>
+                      </td>
+                      <td data-popover-type="html">
+                        {{ if and (not (eq $homeTeamScores "")) (eq $toolTipEnabled true) }}
+                          <div data-popover-html>
+                            {{ $homeTeamScores }}
+                          </div>
+                        {{ end }}
+                        <img style="float: left" width="50" height="auto" src={{ .String "homeTeam.logo" }}>
+                      </td>
+                      <td>
+                          {{ $currentLabel }}
+                      </td>
+                  </tr>
+              </table>
+            {{ end }}        
+
+            <ul class="list list-gap-10 collapsible-container" data-collapse-after="10">
+            {{ range $game := $games }}
+                {{ if and (or (eq ($game.String "homeTeam.abbrev") $myTeam) (eq ($game.String "awayTeam.abbrev") $myTeam) (eq "ALL" $myTeam)) }}
+                {{ $state := $game.String "gameState" }}
+                    {{ if not (or (eq $state "FINAL") (eq $state "OFF")) }}
+                        {{ template "gameItem" $game }}
+                    {{ end }}
+                {{ end }}
+            {{ end }}
+            {{ range $game := $games }}
+                {{ if and (or (eq ($game.String "homeTeam.abbrev") $myTeam) (eq ($game.String "awayTeam.abbrev") $myTeam) (eq "ALL" $myTeam)) }}
+                {{ $state := $game.String "gameState" }}
+                    {{ if or (eq $state "FINAL") (eq $state "OFF") }}
+                        {{ template "gameItem" $game }}
+                    {{ end }}
+                {{ end }}
+            {{ end }}
+            </ul>
+
+
+
+
+
+
+
+
+
+
+
+    - size: small
+      widgets:
+        - type: weather
+          location: Rockaway Point, New York, United States
+          units: imperial # alternatively "metric"
+          hour-format: 12h # alternatively "24h"
+          # Optionally hide the location from being displayed in the widget
+          # hide-location: true
+
+        - type: markets
+          markets:
+            - symbol: SPY
+              name: S&P 500
+            - symbol: BTC-USD
+              name: Bitcoin
+            - symbol: NVDA
+              name: NVIDIA
+            - symbol: AAPL
+              name: Apple
+            - symbol: MSFT
+              name: Microsoft
+
+        - type: releases
+          cache: 1d
+          # Without authentication the Github API allows for up to 60 requests per hour. You can create a
+          # read-only token from your Github account settings and use it here to increase the limit.
+          # token: ...
+          repositories:
+            - glanceapp/glance
+            - Tautulli/Tautulli
+            - pyrochlore/obsidian-tracker
+
+        - type: monitor
+          cache: 1m
+          title: Services
+          style: compact
+          sites:
+            - title: My Github.io
+              url: https://csanicola.github.io/
+
+        - type: custom-api
+          title: LeetCode Daily Question
+          cache: 6h
+          url: https://leetcode.com/graphql
+          method: POST
+          headers:
+            Accept: application/json
+          body-type: json
+          body:
+            query: |
+              query questionOfToday {
+                activeDailyCodingChallengeQuestion {
+                  link
+                  question {
+                    questionId
+                    title
+                    difficulty
+                    topicTags {
+                      name
+                      slug
+                    }
+                  }
+                }
+              }
+            operationName: questionOfToday
+          template: |
+            <div class="leetcode-card">
+              <style>
+                .leetcode-card {
+                  max-width: 600px;
+                  margin: 8px auto;
+                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                  transition: transform 0.2s ease, box-shadow 0.2s ease;
+                }
+                .leetcode-card h1 {
+                  font-size: 24px;
+                  margin: 0 0 16px;
+                  line-height: 1.3;
+                }
+                .leetcode-card h1 a {
+                  color: #8CAAEE;
+                  text-decoration: none;
+                  transition: color 0.2s ease;
+                }
+                .leetcode-card h1 a:hover {
+                  color: #BAC8FF;
+                  text-decoration: underline;
+                }
+                .leetcode-card p {
+                  margin: 8px 0;
+                  color: #C6D0F5;
+                  font-size: 16px;
+                }
+                .leetcode-card .difficulty {
+                  font-weight: 600;
+                  color: #A5ADCE;
+                }
+                .leetcode-card .difficulty.Easy {
+                  color: #A6D189;
+                }
+                .leetcode-card .difficulty.Medium {
+                  color: #E5C890;
+                }
+                .leetcode-card .difficulty.Hard {
+                  color: #E78284;
+                }
+                .leetcode-card .topics {
+                  display: flex;
+                  flex-wrap: wrap;
+                  gap: 8px;
+                  margin: 12px 0;
+                }
+                .leetcode-card .topic-tag {
+                  background: #CA9EE6;
+                  color: #303446;
+                  padding: 4px 12px;
+                  border-radius: 16px;
+                  font-size: 14px;
+                  font-weight: 500;
+                  transition: transform 0.2s ease;
+                }
+                .leetcode-card .topic-tag:hover {
+                  transform: scale(1.05);
+                }
+                .leetcode-card .premium {
+                  color: #E78284;
+                  font-weight: 600;
+                  margin-top: 12px;
+                }
+                @media (max-width: 600px) {
+                  .leetcode-card {
+                    padding: 16px;
+                    margin: 8px;
+                  }
+                  .leetcode-card h1 {
+                    font-size: 20px;
+                  }
+                  .leetcode-card p {
+                    font-size: 14px;
+                  }
+                  .leetcode-card .topic-tag {
+                    font-size: 12px;
+                    padding: 3px 10px;
+                  }
+                }
+              </style>
+              <h1>
+                <a href="https://leetcode.com{{ .JSON.String "data.activeDailyCodingChallengeQuestion.link" }}" target="_blank">
+                  {{ .JSON.String "data.activeDailyCodingChallengeQuestion.question.questionId" }} - {{ .JSON.String "data.activeDailyCodingChallengeQuestion.question.title" }}
+                </a>
+              </h1>
+              <p class="difficulty {{ .JSON.String "data.activeDailyCodingChallengeQuestion.question.difficulty" }}"><strong>Difficulty:</strong> {{ .JSON.String "data.activeDailyCodingChallengeQuestion.question.difficulty" }}</p>
+              <p><strong>Topics:</strong></p>
+              <div class="topics">
+                {{ if .JSON.Exists "data.activeDailyCodingChallengeQuestion.question.topicTags" }}
+                  {{ range .JSON.Array "data.activeDailyCodingChallengeQuestion.question.topicTags" }}
+                    <span class="topic-tag">{{ .String "name" }}</span>
+                  {{ end }}
+                {{ else }}
+                  <span class="topic-tag">None</span>
+                {{ end }}
+              </div>
+              {{ if .JSON.Bool "data.activeDailyCodingChallengeQuestion.question.paidOnly" }}
+                <p class="premium">This is a Premium question</p>
+              {{ end }}
+            </div>
+
+        - type: custom-api
+          title: Trending News (Bluesky)
+          url: >-
+            https://public.api.bsky.app/xrpc/app.bsky.feed.getFeed?feed=at://did:plc:kkf4naxqmweop7dv4l2iqqf5/app.bsky.feed.generator/news-2-0
+          template: |
+            <ul class="list list-gap-10 collapsible-container" data-collapse-after="5">
+              {{ range .JSON.Array "feed" }}
+                {{ if .String "post.embed.external.title" }}
+                  <li>
+                    <a class="size-title-dynamic color-primary-if-not-visited" href="{{ .String "post.embed.external.uri" }}">{{ .String "post.embed.external.title" }}</a>
+                    <ul class="list-horizontal-text">
+                      <li>{{ .String "post.author.displayName" }} <a class="visited-indicator" href="https://bsky.app/profile/{{ .String "post.author.did" }}"> @{{ .String "post.author.handle" }}</a></li>
+                      <li>{{ .String "post.record.text" }}</li>
+                    </ul>
+                  </li>
+                {{ end }}
+              {{ end }}
+            </ul>
+
+
+
+
+
+
+- name: AI Workspace
+  columns:
+    - size: full
+      widgets:
+        - type: bookmarks
+          groups:
+            - title: AI Tools
+              links:
+              - title: ChatGPT
+                url: https://chat.openai.com
+                icon: si:chatbot
+              - title: Deepseek
+                url: https://chat.deepseek.com/
+                icon: si:probot
+              - title: Perplexity
+                url: https://www.perplexity.ai/
+                icon: si:perplexity
+              - title: AI Prompts (Obsidian)
+                url: obsidian://open?vault=Main&file=06%20-%20Main%20Notes%2F06%20-%20References%2FAI%20Prompts
+                icon: si:bitrise
+
+
+- name: Books & Media
+  columns:
+    - size: full
+      widgets:
+        - type: bookmarks
+          groups:
+            - title: Book Tracking
+              links:
+              - title: 1001 Books Sheet
+                url: https://docs.google.com/spreadsheets/d/1APW3petsFvlrtIAyz2c9hDy8Lgpd3SSTAOaaiOUhgAg/edit?usp=sharing
+                icon: si:googlesheets
+              - title: Book Reviews
+                url: https://www.goodreads.com/
+                icon: si:goodreads
+
+            - title: Media Queue
+              links:
+              - title: TV/Movies To Watch
+                url: https://trakt.tv/dashboard
+                icon: si:trakt
+
+
+- name: Data & Analytics Tools
+  columns:
+    - size: full
+      widgets:
+        - type: bookmarks
+          groups:
+          - title: Tools
+            links:
+              - title: JupyterLab
+                url: http://localhost:8888
+                icon: si:jupyter
+              - title: RStudio Server
+                url: http://localhost:8787
+                icon: si:rstudioide
+              - title: pgAdmin
+                url: http://localhost:5050
+                icon: si:postgresql
+
+
+- name: Health & Dog Tracker
+  columns:
+    - size: full
+      widgets:
+        - type: bookmarks
+          groups:
+          - title: Dog Care Logs
+            links:
+              - title: Training Log
+                url: obsidian://open?vault=Main&file=07%20-%20Personal%2FDog%20Training
+                icon: si:datadog
+              - title: Vet Records
+                url: obsidian://open?vault=Main&file=07%20-%20Personal%2FTheo%20Vet%20Info
+                icon: si:petsathome
+          - title: Personal Health
+            links:
+              - title: Medical Records
+                url: obsidian://open?vault=Main&file=07%20-%20Personal%2F00%20-%20Safety%20Box%2FMedical%20Records
+                icon: si:citrix
+
+
+- name: Learning Hub
+  columns:
+    - size: full
+      widgets:
+        - type: bookmarks
+          groups:
+          - title: Learning Resources
+            links:
+              - title: R for Data Science (2e)
+                url: https://r4ds.hadley.nz/
+                icon: si:r
+              - title: SQLZoo Practice
+                url: https://sqlzoo.net/
+                icon: si:mysql
+              - title: Data Analyst Bootcamp for Beginners
+                url: https://www.youtube.com/watch?v=PSNXoAs2FtQ
+                icon: si:youtube
+              - title: Coursera Data Science Track
+                url: https://www.coursera.org/
+                icon: si:coursera
+
+
+- name: Obsidian Notes
+  columns:
+    - size: full
+      widgets:
+        - type: bookmarks
+          groups:
+          - title: Quick Links to Vaults
+            links:
+              - title: Home
+                url: obsidian://open?vault=Main&file=Home
+                icon: si:obsidian
+              - title: Task Board
+                url: obsidian://open?vault=Main&file=Task%20Board
+                icon: si:obsidian
+
+- name: Projects
+  columns:
+    - size: full
+      widgets:
+        - type: bookmarks
+          groups:
+          - title: Active Projects
+            links:
+              - title: Personal Website
+                icon: si:githubpages
+                url: https://csanicola.github.io/
+              - title: Obsidian Project Overview
+                icon: si:obsidian
+                url: obsidian://open?vault=Main&file=06%20-%20Main%20Notes%2FProjects_Status
+              - title: GitHub Important Reference Repo
+                icon: si:github
+                url: https://github.com/csanicola/important-reference-repo
+
+
+- name: Sports
+  columns:
+    - size: full
+      widgets:
+        - type: rss
+          title: Sports Feeds
+          feeds:
+            - url: https://www.reddit.com/r/reddevils/.rss
+              title: r/reddevils
+            - url: https://www.formula1.com/en/latest/all.xml
+              title: Formula 1 News
+            - url: https://www.skysports.com/rss/12040
+              title: Sky Sports Football
+
+- name: Utilities
+  icon: mdi-tools
+  columns:
+    - size: full
+      widgets:
+        - type: bookmarks
+          groups:
+          - title: Quick Access
+            links:
+            - title: VS Code
+              url: http://localhost:8443
+              icon: si:gnometerminal
+            - title: Docker Dashboard
+              url: http://localhost:9000
+              icon: si:docker
+            - title: System Update Script
+              url: file:///home/user/scripts/update.sh
+              icon: si:purescript
