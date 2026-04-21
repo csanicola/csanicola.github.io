@@ -2,7 +2,7 @@
 layout: about
 title: about
 permalink: /
-subtitle: '"You can''t write a script in your mind and then force yourself to follow it. You have to let yourself be.." -Half a Yellow Sun by Chimamanda Ngozi Adichie'
+subtitle: 'not an ai bot....yet'
 
 profile:
   align: right
