@@ -79,7 +79,18 @@ ninja.data = [{
               handler: () => {
                 window.location.href = "/dashboard/";
               },
-            },{id: "post-what-i-learned-this-week",
+            },{id: "post-writing-habit-transformation-day-01",
+        
+          title: "Writing Habit Transformation - Day 01",
+        
+        description: "Working on Improving My Writing By Writing More",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/Day-01/";
+          
+        },
+      },{id: "post-what-i-learned-this-week",
         
           title: "What I Learned This Week",
         
