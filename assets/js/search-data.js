@@ -9,14 +9,7 @@ ninja.data = [{
     handler: () => {
       window.location.href = "/";
     },
-  },{id: "nav-dashboard",
-          title: "Dashboard",
-          description: "",
-          section: "Navigation",
-          handler: () => {
-            window.location.href = "/dashboard/";
-          },
-        },{id: "nav-blog",
+  },{id: "nav-blog",
           title: "blog",
           description: "",
           section: "Navigation",
@@ -112,16 +105,36 @@ ninja.data = [{
             window.location.href = "/blog/2025/what-i-learned-this-week/";
           
         },
-      },{id: "books-into-the-wild",
+      },{id: "books-butter",
+          title: 'Butter',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/butter/";
+            },},{id: "books-into-the-wild",
           title: 'Into the Wild',
           description: "",
           section: "Books",handler: () => {
               window.location.href = "/books/into_the_wild/";
+            },},{id: "books-katabasis",
+          title: 'Katabasis',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/katabasis/";
+            },},{id: "books-project-hail-mary",
+          title: 'Project Hail Mary',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/project_hail_mary/";
             },},{id: "books-second-foundation",
           title: 'Second Foundation',
           description: "",
           section: "Books",handler: () => {
               window.location.href = "/books/second_foundation/";
+            },},{id: "books-the-frozen-river",
+          title: 'The Frozen River',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/the_frozen_river/";
             },},{id: "news-this-website-is-now-live-i-m-still-working-on-it-and-will-be-adding-more-content-as-i-go-along",
           title: 'This website is now live! I’m still working on it and will be...',
           description: "",
