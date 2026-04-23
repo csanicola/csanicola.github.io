@@ -1,0 +1,17 @@
+---
+layout: book-review
+title: Yesteryear
+author: Asako Yuzuki
+cover: assets/img/book_covers/yesteryear.jpg
+olid:  # use Open Library ID to fetch cover (if no `cover` is provided)
+isbn: 9780008742768    # use ISBN to fetch cover (if no `olid` is provided, dashes are optional)
+categories: historical-fiction mystery thriller fiction
+tags: family-bookclub
+buy_link: https://www.amazon.com/Yesteryear-Novel-Caro-Claire-Burke/dp/059380421X
+started: 
+finished: 
+released: 2026
+stars: 
+goodreads_review: 
+status: Reading
+---
