@@ -9,11 +9,10 @@ categories: science-fiction
 tags: 100-books-to-read-before-you-die
 buy_link: https://www.amazon.com/Second-Foundation-Foundation-Series-Book-ebook/dp/B000F2JGZM
 started: 2025-02-03
-finished: 2025-04-20
+finished: 
 released: 1953
-stars: 3.5
+stars:
 goodreads_review: 
-status: Finished
+status: Reading
 ---
 
-Quite the psychological game did this book take on where I, as the reader, felt a part of the game too. It was an interesting way to wrap up the series because with typical trilogies, you expect some sort of grand epic conclusion but there wasn't much of that here compared to something like the Star Wars trilogies as they were being released.

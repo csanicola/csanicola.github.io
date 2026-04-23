@@ -1,0 +1,32 @@
+---
+layout: book-review
+title: The Frozen River
+author: Ariel Lawhon
+cover: assets/img/book_covers/the_frozen_river.jpg
+olid: OL35750093W # use Open Library ID to fetch cover (if no `cover` is provided)
+isbn: 9780385546874  # use ISBN to fetch cover (if no `olid` is provided, dashes are optional)
+categories: historical-fiction
+tags: family-bookclub
+buy_link: https://www.amazon.com/Frozen-River-Novel-Ariel-Lawhon/dp/0385546874
+started: 2026-01-05
+finished: 2026-02-14
+released: 2023
+stars: 4
+goodreads_review: 
+status: Finished
+---
+
+## Review 
+Genuinely enjoyed the story a lot and thought Martha is a wonderfully complex yet admirable and someone everyone should look up to. I enjoyed that despite the flaws she had that she was not ashamed of, she knew her limitations and yet never gave up in the face of them. Also, the way that her and her husband were such a powerful unit together and that no matter what happened they both faced it with level heads and did what was right and not out of emotion. I really did think that when her husband was later for the first trial, that North had him killed and that would have completely changed my feelings on the book because Martha doesn’t need her husband killed to prove how strong of a woman she is. Not all of her children (Jonathan) being admirable of her was also interesting because it showed that even though we know and appreciate how good she is, there are always exceptions. The way that back then a woman’s entire world revolved around men and particular, husbands, was absolutely crazy and thank goodness I was not living during this time because it would just make me miserable. The entire time being just a few buildings and everyone meeting up in the Tavern for everything was something that related to living in my small town but also wish it was more like that in a way and must have been so nice for community but also when something goes wrong, very suffocating.
+
+### Notable Quotes: 
+- “A woman is never more vulnerable than while in labor. Nor is she every stronger.”
+- “Birth is a communal act…This is women’s work at its elemental. Men have no place in this room, no *right*”
+- “It means nothing, whether he has a *right* to his anger or not.”
+- “Listening is a skill acquired by the doing.”
+- “I was certain of two things: Rebecca needed to tell me everything, and I needed to know who must bear the punishment for what had been done to her.” 
+- “pretty faces and misfortune often go hand in hand”
+- “*Men and death: either culprits or cowards*”
+- “It would seem that - accusations of rape aside - few men can stomach the sight of another man’s crushed genitals.”
+- “Half the town has heard by now.” “Only half?” “The rest are late sleepers.”
+- “Memory is a wicked thing that warps and twists. But paper and ink receive the truth without emotion, and they read it back without partiality. That, I believe, is why so few women are taught to read and write. God only knows what they would do with the power of pen and ink at their disposal.”
