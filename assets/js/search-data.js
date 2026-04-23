@@ -79,7 +79,18 @@ ninja.data = [{
               handler: () => {
                 window.location.href = "/dashboard/";
               },
-            },{id: "post-writing-habit-transformation-day-01",
+            },{id: "post-writing-habit-transformation-day-02",
+        
+          title: "Writing Habit Transformation - Day 02",
+        
+        description: "not writing everyday is not a failure",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/Day-02/";
+          
+        },
+      },{id: "post-writing-habit-transformation-day-01",
         
           title: "Writing Habit Transformation - Day 01",
         
