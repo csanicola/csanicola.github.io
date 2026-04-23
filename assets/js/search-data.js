@@ -65,13 +65,6 @@ ninja.data = [{
               handler: () => {
                 window.location.href = "/news/";
               },
-            },{id: "dropdown-dashboard",
-              title: "dashboard",
-              description: "",
-              section: "Dropdown",
-              handler: () => {
-                window.location.href = "/dashboard/";
-              },
             },{id: "post-writing-habit-transformation-day-02",
         
           title: "Writing Habit Transformation - Day 02",
