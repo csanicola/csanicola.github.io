@@ -128,6 +128,11 @@ ninja.data = [{
           description: "",
           section: "Books",handler: () => {
               window.location.href = "/books/the_frozen_river/";
+            },},{id: "books-yesteryear",
+          title: 'Yesteryear',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/yesteryear/";
             },},{id: "news-this-website-is-now-live-i-m-still-working-on-it-and-will-be-adding-more-content-as-i-go-along",
           title: 'This website is now live! I’m still working on it and will be...',
           description: "",
