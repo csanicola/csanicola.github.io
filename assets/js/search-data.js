@@ -98,7 +98,12 @@ ninja.data = [{
             window.location.href = "/blog/2025/what-i-learned-this-week/";
           
         },
-      },{id: "books-butter",
+      },{id: "books-second-foundation",
+          title: 'Second Foundation',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/second_foundation/";
+            },},{id: "books-butter",
           title: 'Butter',
           description: "",
           section: "Books",handler: () => {
@@ -113,21 +118,16 @@ ninja.data = [{
           description: "",
           section: "Books",handler: () => {
               window.location.href = "/books/katabasis/";
-            },},{id: "books-project-hail-mary",
-          title: 'Project Hail Mary',
-          description: "",
-          section: "Books",handler: () => {
-              window.location.href = "/books/project_hail_mary/";
-            },},{id: "books-second-foundation",
-          title: 'Second Foundation',
-          description: "",
-          section: "Books",handler: () => {
-              window.location.href = "/books/second_foundation/";
             },},{id: "books-the-frozen-river",
           title: 'The Frozen River',
           description: "",
           section: "Books",handler: () => {
               window.location.href = "/books/the_frozen_river/";
+            },},{id: "books-project-hail-mary",
+          title: 'Project Hail Mary',
+          description: "",
+          section: "Books",handler: () => {
+              window.location.href = "/books/project_hail_mary/";
             },},{id: "books-yesteryear",
           title: 'Yesteryear',
           description: "",
