@@ -65,7 +65,18 @@ ninja.data = [{
               handler: () => {
                 window.location.href = "/news/";
               },
-            },{id: "post-writing-habit-transformation-day-02",
+            },{id: "post-will-ai-change-human-speech-and-incorrectly-define-humanity-going-forward",
+        
+          title: "Will AI change human speech and incorrectly define humanity going forward?",
+        
+        description: "Just like with &quot;slang&quot;, we could start seeing new vernacular catered to prompts for AI.",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/Will-AI-change-human-speech-and-incorrectly-define-humanity-going-forward/";
+          
+        },
+      },{id: "post-writing-habit-transformation-day-02",
         
           title: "Writing Habit Transformation - Day 02",
         
