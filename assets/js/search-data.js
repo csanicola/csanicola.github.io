@@ -65,7 +65,18 @@ ninja.data = [{
               handler: () => {
                 window.location.href = "/news/";
               },
-            },{id: "post-will-ai-change-human-speech-and-incorrectly-define-humanity-going-forward",
+            },{id: "post-wrong-time-right-place",
+        
+          title: "Wrong Time, Right Place?",
+        
+        description: "As humanity is on the decline in many ways, are there certain advantages of the times that are hindering rather than helping my capacities?",
+        section: "Posts",
+        handler: () => {
+          
+            window.location.href = "/blog/2026/Wrong-Time-Right-Place/";
+          
+        },
+      },{id: "post-will-ai-change-human-speech-and-incorrectly-define-humanity-going-forward",
         
           title: "Will AI change human speech and incorrectly define humanity going forward?",
         
